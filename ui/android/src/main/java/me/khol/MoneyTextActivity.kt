@@ -24,18 +24,14 @@ import me.khol.compose.playground.android.R
 import java.math.BigDecimal
 import androidx.compose.material.Text
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.Flow
 import me.khol.number.DecimalFormat
 import java.util.*
 
@@ -86,7 +82,19 @@ class MoneyText @JvmOverloads constructor(
     private var _enabled: Boolean by mutableStateOf(false)
     var value by mutableStateOf("")
 
-    val state = snapshotFlow { value }
+    var fixedZeros by mutableStateOf(3)
+    val moneyState by derivedStateOf {
+        val minUnit = BigDecimal.TEN.pow(fixedZeros)
+        val numberValue = value.toBigDecimalOrNull()?.times(minUnit)
+
+        when {
+            numberValue == null -> MoneyState.Invalid.NotANumber
+            numberValue < BigDecimal(minValue) -> MoneyState.Invalid.UnderMinAmount
+            numberValue > BigDecimal(maxValue) -> MoneyState.Invalid.OverMaxAmount
+            else -> MoneyState.Valid(numberValue)
+        }
+    }
+    val state: Flow<MoneyState> = snapshotFlow { moneyState }
 
     var amountFontSize by mutableStateOf(36.sp)
     var currencyFontSize by mutableStateOf(30.sp)
@@ -104,17 +112,6 @@ class MoneyText @JvmOverloads constructor(
     @Composable
     override fun Content() {
         Column {
-            val fixedZeros = 3
-            val minUnit = BigDecimal.TEN.pow(fixedZeros)
-            val numberValue = value.toBigDecimalOrNull()?.times(minUnit)
-
-            val state = when {
-                numberValue == null -> State.Invalid.NotANumber
-                numberValue < BigDecimal(minValue) -> State.Invalid.UnderMinAmount
-                numberValue > BigDecimal(maxValue) -> State.Invalid.OverMaxAmount
-                else -> State.Valid(numberValue)
-            }
-
             val textStyle = TextStyle(
                 fontSize = amountFontSize,
 //                fontFamily = FontFamily.Default,
@@ -151,13 +148,13 @@ class MoneyText @JvmOverloads constructor(
                     )
                 },
                 error = {
-                    when (state) {
-                        is State.Valid -> Unit
-                        is State.Invalid -> Text(
+                    when (val state = moneyState) {
+                        is MoneyState.Valid -> Unit
+                        is MoneyState.Invalid -> Text(
                             text = when (state) {
-                                is State.Invalid.UnderMinAmount -> "The amount cannot be lower than $minValue"
-                                is State.Invalid.OverMaxAmount -> "The amount cannot be over $maxValue"
-                                is State.Invalid.NotANumber -> ""
+                                is MoneyState.Invalid.UnderMinAmount -> "The amount cannot be lower than $minValue"
+                                is MoneyState.Invalid.OverMaxAmount -> "The amount cannot be over $maxValue"
+                                is MoneyState.Invalid.NotANumber -> ""
                             },
                         )
                     }
@@ -166,10 +163,10 @@ class MoneyText @JvmOverloads constructor(
         }
     }
 
-    sealed interface State {
-        class Valid(val number: BigDecimal) : State
+    sealed interface MoneyState {
+        data class Valid(val number: BigDecimal) : MoneyState
 
-        sealed interface Invalid : State {
+        sealed interface Invalid : MoneyState {
             object NotANumber : Invalid
             object OverMaxAmount : Invalid
             object UnderMinAmount : Invalid
