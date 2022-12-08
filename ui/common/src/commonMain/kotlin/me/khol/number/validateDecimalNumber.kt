@@ -42,8 +42,16 @@ fun validateDecimalNumber(
     if (oldValue.text.isNotEmpty() && newValue.text == "$decimalSeparator")
         return TextFieldValue(AnnotatedString(""))
 
+    // Do not allow decimal separators if fractions are not allowed
+    if (format.maximumFractionDigits == 0 && newValue.text.count { it == decimalSeparator } > 0)
+        return oldValue
+
     // Do not allow multiple decimal separators
     if (newValue.text.count { it == decimalSeparator } > 1)
+        return oldValue
+
+    // Do not allow minus sign if minus sign is not allowed
+    if (!format.allowNegative && newValue.text.count { it == minusSign } > 0)
         return oldValue
 
     // Do not allow multiple minus signs
@@ -91,7 +99,6 @@ fun validateDecimalNumber(
         // * contains minus sign somewhere else than at the start
         // * etc.
         // Simply disallow the update.
-        println(e)
         return oldValue
     }
 }

@@ -9,13 +9,23 @@
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
         <activity
-            android:name="me.khol.MainActivity"
+            android:name="me.khol.CrossroadActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <activity
+            android:name="me.khol.MoneyTextActivity"
+            android:exported="true"
+            />
+
+        <activity
+            android:name="me.khol.FontMetricsActivity"
+            android:exported="true"
+            />
 
     </application>
 

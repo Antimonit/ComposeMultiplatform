@@ -3,6 +3,12 @@ package me.khol.number
 import java.util.*
 import java.text.DecimalFormat as JavaDecimalFormat
 
+private const val DEFAULT_ALLOW_NEGATIVE: Boolean = true
+private const val DEFAULT_MAXIMUM_INTEGER_DIGITS: Int = Int.MAX_VALUE
+private const val DEFAULT_MAXIMUM_FRACTION_DIGITS: Int = 2
+private const val DEFAULT_MAXIMUM_LEADING_ZEROS: Int = 0
+private const val DEFAULT_MAXIMUM_TRAILING_ZEROS: Int = Int.MAX_VALUE
+
 /**
  * Similar to [java.text.DecimalFormat] but with limited features that are supported
  * by [validateDecimalNumber] and [decimalNumberTransformation].
@@ -19,31 +25,41 @@ import java.text.DecimalFormat as JavaDecimalFormat
 data class DecimalFormat(
     val symbols: Symbols,
     val groupingSize: Int,
-    val maximumIntegerDigits: Int = Int.MAX_VALUE,
-    val maximumFractionDigits: Int = 2,
-    val maximumLeadingZeros: Int = 0,
-    val maximumTrailingZeros: Int = Int.MAX_VALUE,
+    val allowNegative: Boolean = DEFAULT_ALLOW_NEGATIVE,
+    val maximumIntegerDigits: Int = DEFAULT_MAXIMUM_INTEGER_DIGITS,
+    val maximumFractionDigits: Int = DEFAULT_MAXIMUM_FRACTION_DIGITS,
+    val maximumLeadingZeros: Int = DEFAULT_MAXIMUM_LEADING_ZEROS,
+    val maximumTrailingZeros: Int = DEFAULT_MAXIMUM_TRAILING_ZEROS,
 ) {
-
     data class Symbols(
         val minusSign: Char,
         val decimalSeparator: Char,
         val groupingSeparator: Char,
         val zeroDigit: Char,
     )
+}
 
-    constructor(locale: Locale) : this(
-        javaFormat = JavaDecimalFormat.getNumberInstance(locale) as JavaDecimalFormat
-    )
-
-    constructor(javaFormat: JavaDecimalFormat) : this(
-        symbols = Symbols(
+fun DecimalFormat(
+    locale: Locale,
+    allowNegative: Boolean = DEFAULT_ALLOW_NEGATIVE,
+    maximumIntegerDigits: Int = DEFAULT_MAXIMUM_INTEGER_DIGITS,
+    maximumFractionDigits: Int = DEFAULT_MAXIMUM_FRACTION_DIGITS,
+    maximumLeadingZeros: Int = DEFAULT_MAXIMUM_LEADING_ZEROS,
+    maximumTrailingZeros: Int = DEFAULT_MAXIMUM_TRAILING_ZEROS,
+): DecimalFormat {
+    val javaFormat = JavaDecimalFormat.getNumberInstance(locale) as JavaDecimalFormat
+    return DecimalFormat(
+        symbols = DecimalFormat.Symbols(
             javaFormat.decimalFormatSymbols.minusSign,
             javaFormat.decimalFormatSymbols.decimalSeparator,
             javaFormat.decimalFormatSymbols.groupingSeparator,
             javaFormat.decimalFormatSymbols.zeroDigit,
         ),
         groupingSize = javaFormat.groupingSize,
+        allowNegative = allowNegative,
+        maximumIntegerDigits = maximumIntegerDigits,
+        maximumFractionDigits = maximumFractionDigits,
+        maximumLeadingZeros = maximumLeadingZeros,
+        maximumTrailingZeros = maximumTrailingZeros,
     )
 }
-
